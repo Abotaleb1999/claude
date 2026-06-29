@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>سباق</title>
+<style>
+body { margin: 0; background: #111; display: flex; justify-content: center; align-items: center; height: 100vh; }
+canvas { border: 2px solid #444; }
+</style>
+</head>
+<body>
+<canvas id="c" width="300" height="500"></canvas>
+<script>
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+
+let score = 0, speed = 3, gameOver = false;
+let roadY = 0;
+
+const player = { x: 125, y: 420, w: 40, h: 60 };
+const enemies = [];
+
+function spawnEnemy() {
+  const lanes = [50, 130, 210];
+  const x = lanes[Math.floor(Math.random() * 3)];
+  enemies.push({ x, y: -60, w: 40, h: 60 });
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft' && player.x > 20) player.x -= 40;
+  if (e.key === 'ArrowRight' && player.x < 240) player.x += 40;
+  if (e.key === 'r' && gameOver) restart();
+});
+
+function restart() {
+  score = 0; speed = 3; gameOver = false;
+  player.x = 125;
+  enemies.length = 0;
+  loop();
+}
+
+function drawCar(x, y, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, 40, 60);
+  ctx.fillStyle = '#111';
+  ctx.fillRect(x+5, y+5, 12, 18);
+  ctx.fillRect(x+23, y+5, 12, 18);
+  ctx.fillRect(x+5, y+38, 12, 18);
+  ctx.fillRect(x+23, y+38, 12, 18);
+}
+
+let frame = 0;
+function loop() {
+  if (gameOver) return;
+
+  ctx.fillStyle = '#333';
+  ctx.fillRect(0, 0, 300, 500);
+
+  // road lines
+  roadY = (roadY + speed) % 40;
+  ctx.fillStyle = '#fff';
+  for (let y = roadY - 40; y < 500; y += 40) {
+    ctx.fillRect(148, y, 4, 20);
+    ctx.fillRect(238, y, 4, 20);
+    ctx.fillRect(58, y, 4, 20);
+  }
+
+  // enemies
+  if (frame % 60 === 0) spawnEnemy();
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    enemies[i].y += speed;
+    drawCar(enemies[i].x, enemies[i].y, '#e74c3c');
+    if (enemies[i].y > 500) { enemies.splice(i, 1); score++; }
+
+    // collision
+    const e = enemies[i];
+    if (e && e.x < player.x+38 && e.x+38 > player.x && e.y < player.y+58 && e.y+58 > player.y) {
+      gameOver = true;
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(0,0,300,500);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 28px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('انتهت اللعبة!', 150, 220);
+      ctx.font = '18px Arial';
+      ctx.fillText('النقاط: ' + score, 150, 260);
+      ctx.fillText('اضغط R للعب مجدداً', 150, 300);
+      return;
+    }
+  }
+
+  drawCar(player.x, player.y, '#3498db');
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '16px Arial';
+  ctx.textAlign = 'left';
+  ctx.fillText('النقاط: ' + score, 10, 25);
+
+  if (frame % 300 === 0 && speed < 10) speed += 0.5;
+  frame++;
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>
